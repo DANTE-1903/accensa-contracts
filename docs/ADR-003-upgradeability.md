@@ -15,7 +15,7 @@ We maintain a differentiated posture tailored to each contract's role:
 ### Reasoning
 1. **Trust Minimization for Receipts:** For `ReceiptAnchor`, remaining immutable provides a guarantee to users, indexers, and auditors that anchored payment proofs cannot be modified or reinterpreted by code replacement.
 2. **Operational Continuity for Vault Float:** For `RefundVault`, requiring a full redeployment and manual capital transfer for every logic fix or policy adjustment carries operational risks and capital disruption. The two-phase upgrade flow decouples storage layout migration from WASM replacement, while strictly gating both steps behind `admin.require_auth()`.
-3. **Auditability and Safety Controls:** The `RefundVault` upgrade mechanism enforces monotonic storage versioning (`migrate_state`), requires pauses during migration, and separates state validation from the WASM handoff to prevent reentrancy and unexpected execution transitions during upgrade.
+3. **Auditability and Safety Controls:** The `RefundVault` contract enforces monotonic storage versioning (`migrate_state`) and admin authentication on-chain, while the migration runbook prescribes operator-level safety steps (pausing vault activity, taking state snapshots, and validating invariants before invoking `upgrade_wasm`) to prevent reentrancy and unexpected execution transitions during upgrade.
 
 ## Migration Strategy
 - **For `ReceiptAnchor`:** In the event of required logic changes or critical defects, the migration path remains **Redeployment and Re-anchoring**: a new contract is deployed, integrators update their contract address, and historical anchored batches remain permanently verifiable on the immutable predecessor.
