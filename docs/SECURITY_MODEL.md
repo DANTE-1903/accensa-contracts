@@ -218,8 +218,9 @@ window-based refunds.
   `contracts/refund-vault/src/vdf.rs` stays unknown — anyone who factors `N`
   can compute `x^(2^T) mod N` in `O(log T)` steps via `phi(N)`. The constant
   shipped in this release was generated for the source release with its prime
-  factors discarded after generation; because the contracts are immutable,
-  rotating the modulus requires a new deployment (ADR 003). A production
+  factors discarded after generation; rotating the modulus requires either a
+  WASM upgrade via `upgrade_wasm` on `RefundVault` (per ADR 003 and
+  `docs/REFUND_VAULT_MIGRATION.md`) or a new deployment. A production
   deployment should replace `MODULUS` with one from a trusted-setup ceremony
   (ideally ≥2048 bits, which would require a larger big-int implementation
   than the SDK's 256-bit host integers — the 1024-bit arithmetic here is pure
