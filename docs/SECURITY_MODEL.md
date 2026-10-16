@@ -45,7 +45,7 @@ If the admin's private key is compromised, the attacker could drain the vault's 
 store a single `Address` as `Admin` and put no constraint on what it is, so a
 `RefundVault` or `ReceiptAnchor` initialised with a multisig contract account as
 its merchant already requires that account's threshold of signers for `pause`,
-`unpause`, `set_refund_window`, `refund`, `withdraw`, `anchor_batch` and
+`unpause`, `propose_policy`, `execute_policy`, `refund`, `withdraw`, `anchor_batch` and
 `prune_batches` — with no threshold logic in this repository. This is covered by
 tests in `contracts/refund-vault/tests/multisig_admin_vault.rs` and
 `contracts/receipt-anchor/tests/multisig_admin_anchor.rs` (see
@@ -226,9 +226,10 @@ window-based refunds.
   WASM). Treat the shipped modulus as a testnet-grade placeholder, not a
   mainnet parameter.
 
-### Zero Window Misconfiguration
-- **Threat:** A merchant accidentally or intentionally sets a refund window of `0`, implicitly attempting to create an 'unlimited' refund window.
-- **Mitigation:** Unlimited refund windows are deemed illegitimate to eliminate silent misconfigurations and unsafe defaults. Both `initialize` and `set_refund_window` explicitly reject any window value of `0` (or below `MIN_REFUND_WINDOW`) with an `InvalidWindow` error.
+### Zero Window Semantics (Unbounded Window)
+- **Design & Posture:** Setting a refund window of `0` in `initialize` (or via timelocked `propose_policy` / `execute_policy`) is permitted by design and explicitly represents an **unbounded window** (no time limit on refund claims). The contract does not reject `window == 0`.
+- **TTL Guard Handling:** When `window == 0`, `claim_single` bypasses the time-window expiration check, and `refund_record_ttl_extend_to` (in `contracts/refund-vault/src/lib.rs`) extends the `RefundV2` persistent entry to the network's `max_ttl()`. This prevents the anti-replay tombstone of an unbounded policy from expiring prematurely while claims remain valid.
+- **Verification:** Proven by unit tests `test_zero_window_disables_expiry` and `test_zero_window_extends_guard_to_max_ttl` in `contracts/refund-vault/src/test.rs`. The getter `get_refund_window` returns `0` when no time limit is imposed.
 
 ### Float Draining (Negative/Zero Amounts)
 - **Threat:** An attacker tries to refund a negative amount to cause an underflow or steal funds.
